@@ -22,6 +22,27 @@
 
     html { scroll-behavior: smooth; }
 
+    /* Offset anchor jumps so titles aren't hidden under the fixed nav */
+    :where(#services, #about, #process, #news, #contact) { scroll-margin-top: 96px; }
+
+    /* Visible keyboard focus (works on both light and dark sections) */
+    a:focus-visible, button:focus-visible, input:focus-visible,
+    textarea:focus-visible, select:focus-visible {
+      outline: 2px solid #4a9eff;
+      outline-offset: 3px;
+      border-radius: 1px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+      .reveal { opacity: 1 !important; transform: none !important; }
+    }
+
     body {
       font-family: 'DM Sans', sans-serif;
       background: var(--navy);
@@ -36,7 +57,7 @@
       content: '';
       position: fixed; inset: 0;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none; z-index: 9999; opacity: 0.4;
+      pointer-events: none; z-index: 9999; opacity: 0.16;
     }
 
     /* ── NAV ── */
@@ -44,10 +65,17 @@
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
       padding: 1.5rem 6vw;
-      background: rgba(14,14,14,0.97);
-      backdrop-filter: blur(12px);
+      background: rgba(14,14,14,0.95);
       border-bottom: 1px solid rgba(255,255,255,0.12);
       animation: fadeDown 0.8s ease both;
+      transition: padding 0.35s ease, background 0.35s ease, box-shadow 0.35s ease;
+      will-change: padding;
+    }
+    /* Condense the nav once the user scrolls */
+    nav.scrolled {
+      padding-top: 0.9rem; padding-bottom: 0.9rem;
+      background: rgba(12,12,12,0.98);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.35);
     }
     @keyframes fadeDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:none; } }
 
@@ -66,8 +94,15 @@
     .logo-sub { display: block; font-size: 0.5rem; font-family: 'DM Sans', sans-serif; font-weight: 300; color: var(--gray); letter-spacing: 0.16em; text-transform: uppercase; }
 
     .nav-links { display: flex; gap: 2.5rem; list-style: none; }
-    .nav-links a { text-decoration: none; color: var(--gray); font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.3s; }
+    .nav-links a { position: relative; text-decoration: none; color: var(--gray); font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.3s; }
     .nav-links a:hover { color: var(--gold); }
+    .nav-links a.active { color: var(--gold); }
+    .nav-links a::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: -6px;
+      height: 1px; background: var(--gold);
+      transform: scaleX(0); transform-origin: left; transition: transform 0.3s;
+    }
+    .nav-links a:hover::after, .nav-links a.active::after { transform: scaleX(1); }
 
     .nav-cta {
       background: transparent;
@@ -119,7 +154,6 @@
       align-items: center;
       justify-content: center;
       gap: 2.5rem;
-      backdrop-filter: blur(16px);
     }
     .mobile-menu.open { display: flex; }
     .mobile-menu a {
@@ -151,7 +185,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       align-items: center;
-      padding: 18rem 6vw 6rem;
+      padding: clamp(9rem, 14vh, 12rem) 6vw 5rem;
       position: relative;
       overflow: hidden;
     }
@@ -168,7 +202,7 @@
       pointer-events: none;
     }
 
-    .hero-text { position: relative; z-index: 2; padding-top: 4rem; }
+    .hero-text { position: relative; z-index: 2; padding-top: 0; }
     .hero-badge {
       display: inline-block;
       font-size: 0.7rem;
@@ -301,8 +335,8 @@
       padding: 2.5rem;
       position: relative;
       overflow: hidden;
-      transition: background 0.4s;
-      cursor: default;
+      transition: background 0.35s, transform 0.35s, box-shadow 0.35s;
+      cursor: pointer;
     }
     .service-card::before {
       content: '';
@@ -313,8 +347,16 @@
       transform-origin: left;
       transition: transform 0.4s;
     }
-    .service-card:hover { background: #f2f2f2; }
+    .service-card:hover { background: #fafafa; transform: translateY(-5px); box-shadow: 0 14px 34px rgba(0,0,0,0.10); }
     .service-card:hover::before { transform: scaleX(1); }
+    /* Click affordance — signals the whole card opens a detail page */
+    .service-card::after {
+      content: 'Μάθετε περισσότερα →';
+      display: block; margin-top: 1.3rem;
+      font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #9a9a9a; transition: color 0.3s, letter-spacing 0.3s;
+    }
+    .service-card:hover::after { color: #1a1a1a; letter-spacing: 0.12em; }
 
     .service-icon {
       width: 48px; height: 48px;
@@ -454,6 +496,8 @@
     .form-field select option { background: #f5f5f5; color: #1a1a1a; }
     .form-submit { background: #1a1a1a; color: #ffffff; border: none; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.9rem; letter-spacing: 0.05em; padding: 1rem 2.5rem; cursor: pointer; transition: all 0.3s; align-self: flex-start; }
     .form-submit:hover { background: #333333; }
+    .form-submit:disabled { opacity: 0.7; cursor: default; }
+    .hp-field { display: none; }
 
     /* ── FOOTER ── */
     footer {
@@ -928,6 +972,7 @@
   <a href="#" onclick="closeMenu('top'); return false;">Αρχική</a>
   <a href="#" onclick="closeMenu('services'); return false;">Υπηρεσίες</a>
   <a href="#" onclick="closeMenu('about'); return false;">Σχετικά</a>
+  <a href="#" onclick="closeMenu('process'); return false;">Διαδικασία</a>
   <a href="#" onclick="closeMenu('news'); return false;">Νέα</a>
   <a href="#" onclick="closeMenu('contact'); return false;" class="menu-cta">Επικοινωνία</a>
 </div>
@@ -1211,15 +1256,17 @@
     </div>
 
     <div class="reveal">
-      <div class="contact-form">
+      <form class="contact-form" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="contact" />
+        <p class="hp-field"><label>Μην συμπληρώνετε: <input name="bot-field" /></label></p>
         <div class="form-row">
-          <div class="form-field"><label>Όνομα</label><input type="text" placeholder="Το όνομά σας"/></div>
-          <div class="form-field"><label>Τηλέφωνο</label><input type="tel" placeholder="69X XXX XXXX"/></div>
+          <div class="form-field"><label for="cf-name">Όνομα</label><input id="cf-name" name="name" type="text" placeholder="Το όνομά σας" required /></div>
+          <div class="form-field"><label for="cf-phone">Τηλέφωνο</label><input id="cf-phone" name="phone" type="tel" placeholder="69X XXX XXXX" /></div>
         </div>
-        <div class="form-field"><label>Email</label><input type="email" placeholder="email@παράδειγμα.gr"/></div>
+        <div class="form-field"><label for="cf-email">Email</label><input id="cf-email" name="email" type="email" placeholder="email@παράδειγμα.gr" required /></div>
         <div class="form-field">
-          <label>Υπηρεσία</label>
-          <select>
+          <label for="cf-service">Υπηρεσία</label>
+          <select id="cf-service" name="service">
             <option value="">Επιλέξτε υπηρεσία...</option>
             <option>ΥΔΕ – Υπεύθυνη Δήλωση Εγκαταστάτη</option>
             <option>Αίτηση Νέας Παροχής</option>
@@ -1229,9 +1276,9 @@
             <option>Υπηρεσίες Μηχανικού</option>
           </select>
         </div>
-        <div class="form-field"><label>Μήνυμα</label><textarea placeholder="Περιγράψτε το έργο σας..."></textarea></div>
-        <button class="form-submit">Αποστολή Αιτήματος →</button>
-      </div>
+        <div class="form-field"><label for="cf-message">Μήνυμα</label><textarea id="cf-message" name="message" placeholder="Περιγράψτε το έργο σας..." required></textarea></div>
+        <button type="submit" class="form-submit">Αποστολή Αιτήματος →</button>
+      </form>
     </div>
   </div>
 </section>
@@ -1290,12 +1337,67 @@
   }, { threshold: 0.12 });
   reveals.forEach(r => obs.observe(r));
 
-  // Form submit mock
-  document.querySelector('.form-submit').addEventListener('click', function() {
-    this.textContent = '✓ Το μήνυμα στάλθηκε!';
-    this.style.background = '#4a9eff';
-    setTimeout(() => { this.textContent = 'Αποστολή Αιτήματος →'; this.style.background = ''; }, 3000);
+  // Condense the nav on scroll + highlight the section you're viewing
+  const navEl = document.querySelector('nav');
+  let navTicking = false;
+  window.addEventListener('scroll', () => {
+    if (!navTicking) {
+      window.requestAnimationFrame(() => {
+        navEl.classList.toggle('scrolled', window.scrollY > 24);
+        navTicking = false;
+      });
+      navTicking = true;
+    }
+  }, { passive: true });
+
+  const navLinkMap = {};
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    const id = (a.getAttribute('href') || '').replace('#', '');
+    if (id) navLinkMap[id] = a;
   });
+  const sectionObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        document.querySelectorAll('.nav-links a.active').forEach(a => a.classList.remove('active'));
+        const link = navLinkMap[e.target.id];
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  ['services', 'about', 'process', 'news', 'contact'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) sectionObs.observe(el);
+  });
+
+  // Contact form → Netlify Forms (AJAX submit, then inline confirmation)
+  const contactForm = document.querySelector('form[name="contact"]');
+  if (contactForm) {
+    contactForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const btn = contactForm.querySelector('.form-submit');
+      const original = btn.textContent;
+      const body = new URLSearchParams(new FormData(contactForm)).toString();
+      btn.disabled = true;
+      btn.textContent = 'Αποστολή...';
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body
+      })
+      .then((res) => {
+        if (!res.ok) throw new Error('bad status');
+        btn.textContent = '✓ Το μήνυμα στάλθηκε!';
+        btn.style.background = '#1a1a1a';
+        contactForm.reset();
+        setTimeout(() => { btn.textContent = original; btn.style.background = ''; btn.disabled = false; }, 4500);
+      })
+      .catch(() => {
+        btn.textContent = '✗ Σφάλμα — δοκιμάστε ξανά';
+        btn.style.background = '#444444';
+        setTimeout(() => { btn.textContent = original; btn.style.background = ''; btn.disabled = false; }, 4500);
+      });
+    });
+  }
 </script>
 
 </div><!-- end main-site -->
